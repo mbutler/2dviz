@@ -6,6 +6,7 @@ preloader.preload = function () {
   this.game.load.image('grass', 'images/grass-tiles-2-small.png')
   this.game.load.image('tree', 'images/tree2-final.png')
   this.game.load.image('red', 'images/red.png')
+  this.game.load.image('cavehole', 'images/cavehole.png')
 
   this.game.load.image('golfball', 'images/golfball.png')
 
