@@ -1,11 +1,11 @@
 var game = {}
 var speed = 200
 var map, background, foreground, top, blocked, character, canKick, ballDuration, ballDistance, maxWindUp = 2000, keyK, keyP, keyB, KeyN, KeyM,
-keyUp, keyRight, keyDown, keyLeft, arrowAngle = 270
+keyUp, keyRight, keyDown, keyLeft, keyEsc, escAim
 
 function isTouching () {
   golfball.body.stopVelocityOnCollide = false
-  if(golfball.body.velocity.x === 0 && golfball.body.velocity.y === 0){
+  if(golfball.body.velocity.x === 0 && golfball.body.velocity.y === 0 && escAim !== true){
     canKick = true
     setForTeeing(character)
   }
@@ -16,9 +16,29 @@ function setForTeeing (char) {
   char.body.velocity.y = 0
   golfball.body.velocity.x = 0
   golfball.body.velocity.y = 0
-  char.x = golfball.x - 45
-  char.y = golfball.y - 45
-  char.animations.frame = 27
+
+  if(dottedline.angle < 90 && dottedline.angle > -90){
+    char.x = golfball.x - 25
+    char.y = golfball.y - 25
+    char.animations.frame = 27
+  } else {
+    char.x = golfball.x + 25
+    char.y = golfball.y - 25
+    char.animations.frame = 9
+  }
+}
+
+function escapeAiming(){
+  //canKick = false
+  escAim = true
+
+  if (canKick === true) {
+    if (character.animations.frame === 27) {
+      character.x -= 15
+    } else if (character.animations.frame === 9) {
+      character.x += 15
+    }
+  }
 }
 
 function test (e) {
@@ -33,7 +53,9 @@ function kick (key) {
     if(kickPercentage > 1){
       kickPercentage = 1
     }
-
+    golfball.body.moveTo(ballDuration, ballDistance*kickPercentage, dottedline.angle)
+    kickWindUp = 0
+    kickPercentage = 0
     console.log(kickPercentage)
   }
 }
@@ -59,27 +81,6 @@ function detectKick (key) {
     }
 }
 
-function arrows (key) {
-  switch(key.event.code){
-    case "keyUp":
-    character.animations.play(key.event.code, true)
-    character.body.velocity.y -= speed
-      break;
-    case "keyRight":
-    character.animations.play(key.event.code, true)
-    character.body.velocity.x += speed
-      break;
-    case "keyDown":
-    character.animations.play(key.event.code, true)
-    character.body.velocity.y += speed
-      break;
-    case "keyLeft":
-    character.animations.play(key.event.code, true)
-    character.body.velocity.x -= speed
-      break;
-  }
-}
-
 game.create = function () {
   game.physics.startSystem(Phaser.Physics.ARCADE)
 
@@ -100,9 +101,13 @@ game.create = function () {
   blocked.visible = false
   top = map.createLayer('Top')
   cavehole = game.add.sprite(40, 400, 'cavehole')
-  golfball = game.add.sprite(45, 100, 'golfball')
-  character = game.add.sprite(40, 100, 'characters')
+  golfball = game.add.sprite(500, 400, 'golfball')
+  character = game.add.sprite(450, 100, 'characters')
+  dottedline = game.add.sprite(golfball.x, golfball.y, 'dottedline')
 
+  character.anchor.setTo(0.5, 0.5)
+  golfball.anchor.setTo(0.5, 0.5)
+  dottedline.anchor.setTo(0, 0.5)
 
   foreground = map.createLayer('Foreground')
 
@@ -139,15 +144,8 @@ game.create = function () {
   keyM = game.input.keyboard.addKey(Phaser.KeyCode.M)
   keyM.onDown.add(detectKick)
 
-  // keyUp = game.input.keyboard.addKey(Phaser.KeyCode.UP)
-  // keyUp.onDown.add(arrows)
-  // keyRight = game.input.keyboard.addKey(Phaser.KeyCode.RIGHT)
-  // keyRight.onDown.add(arrows)
-  // keyDown = game.input.keyboard.addKey(Phaser.KeyCode.DOWN)
-  // keyDown.onDown.add(arrows)
-  // keyLeft = game.input.keyboard.addKey(Phaser.KeyCode.LEFT)
-  // keyLeft.onDown.add(arrows)
-}
+  keyEsc = game.input.keyboard.addKey(Phaser.KeyCode.ESC)
+  keyEsc.onDown.add(escapeAiming)}
 
 /*
 *
@@ -169,13 +167,14 @@ function ballInHole () {
 
 game.update = function () {
   canKick = false
+  dottedline.visible = false
+  dottedline.x = golfball.x
+  dottedline.y = golfball.y
 
   game.physics.arcade.collide(character, blocked)
   game.physics.arcade.collide(golfball, blocked)
   game.physics.arcade.overlap(character, golfball, isTouching)
   game.physics.arcade.overlap(golfball, cavehole, ballInHole)
-  //golfball.body.drag.x = 70
-  //golfball.body.drag.y = 70
 
   //lock the camera on our sprite guy and follow
   this.camera.follow(character, Phaser.Camera.FOLLOW_LOCKON)
@@ -186,74 +185,38 @@ game.update = function () {
   // Check key states every frame.
   // Sprites need a velocity to work with physics
   if (game.input.keyboard.isDown(Phaser.Keyboard.LEFT)) {
-    if (canKick === true) {
-      arrowAngle += 2
-      if (arrowAngle > 360) { arrowAngle = 0 }
-      console.log(arrowAngle)
-    }
-      character.animations.play('left', true)
-      character.body.velocity.x -= speed
-  } else if (game.input.keyboard.isDown(Phaser.Keyboard.RIGHT)) {
-      character.animations.play('right', true)
       if (canKick === true) {
-        arrowAngle -= 2
-        if (arrowAngle > 360) { arrowAngle = 0 }
-        console.log(arrowAngle)
+        dottedline.visible = true
+        dottedline.angle += 1
+      } else {
+        escAim = false
+        character.animations.play('left', true)
+        character.body.velocity.x -= speed
       }
-      character.body.velocity.x += speed
+  } else if (game.input.keyboard.isDown(Phaser.Keyboard.RIGHT)) {
+        if (canKick === true) {
+          dottedline.visible = true
+          dottedline.angle -= 1
+        } else {
+          escAim = false
+        character.animations.play('right', true)
+        character.body.velocity.x += speed
+      }
   } else if (game.input.keyboard.isDown(Phaser.Keyboard.DOWN)) {
-      character.animations.play('down', true)
-      character.body.velocity.y += speed
+      if (canKick === true) {
+        character.body.velocity.y = 0
+      } else {
+        escAim = false
+        character.animations.play('down', true)
+        character.body.velocity.y += speed
+      }
   } else if (game.input.keyboard.isDown(Phaser.Keyboard.UP)) {
+      if (canKick === true){
+        character.body.velocity.y = 0
+      } else {
+        escAim = false
       character.animations.play('up', true)
       character.body.velocity.y -= speed
-  } else if (game.input.keyboard.isDown(Phaser.Keyboard.NUMPAD_6)) {
-    if (canKick === true) {
-      golfball.body.moveTo(ballDuration, ballDistance*kickPercentage, 0)
-      kickWindUp=0
-      kickPercentage = 0
-    }
-  } else if (game.input.keyboard.isDown(Phaser.Keyboard.NUMPAD_9)) {
-    if (canKick === true) {
-      golfball.body.moveTo(ballDuration, ballDistance*kickPercentage, 315)
-      kickWindUp = 0
-      kickPercentage = 0
-    }
-  } else if (game.input.keyboard.isDown(Phaser.Keyboard.NUMPAD_8)) {
-    if (canKick === true) {
-      golfball.body.moveTo(ballDuration, ballDistance*kickPercentage, 270)
-      kickWindUp = 0
-      kickPercentage = 0
-    }
-  } else if (game.input.keyboard.isDown(Phaser.Keyboard.NUMPAD_7)) {
-    if (canKick === true) {
-      golfball.body.moveTo(ballDuration, ballDistance*kickPercentage, 225)
-      kickWindUp = 0
-      kickPercentage = 0
-    }
-  } else if (game.input.keyboard.isDown(Phaser.Keyboard.NUMPAD_4)) {
-    if (canKick === true) {
-      golfball.body.moveTo(ballDuration, ballDistance*kickPercentage, 180)
-      kickWindUp = 0
-      kickPercentage = 0
-    }
-  } else if (game.input.keyboard.isDown(Phaser.Keyboard.NUMPAD_1)) {
-    if (canKick === true) {
-      golfball.body.moveTo(ballDuration, ballDistance*kickPercentage, 135)
-      kickWindUp = 0
-      kickPercentage = 0
-    }
-  } else if (game.input.keyboard.isDown(Phaser.Keyboard.NUMPAD_2)) {
-    if (canKick === true) {
-      golfball.body.moveTo(ballDuration, ballDistance*kickPercentage, 90)
-      kickWindUp = 0
-      kickPercentage = 0
-    }
-  } else if (game.input.keyboard.isDown(Phaser.Keyboard.NUMPAD_3)) {
-    if (canKick === true) {
-      golfball.body.moveTo(ballDuration, ballDistance*kickPercentage, 45)
-      kickWindUp = 0
-      kickPercentage = 0
     }
   } else {
       character.animations.stop()
