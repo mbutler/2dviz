@@ -8,6 +8,12 @@ preloader.preload = function() {
     this.game.load.image('cavehole', 'images/cavehole.png')
     this.game.load.image('dottedline', 'images/dottedline.png')
     this.game.load.image('golfball', 'images/golfball.png')
+    this.game.load.image('chipKickUi', 'images/chip-kick.png')
+    this.game.load.image('chipKickUi2', 'images/chip-kick-2.png')
+    this.game.load.image('stanceUi', 'images/stance.png')
+    this.game.load.image('puttKickUi', 'images/putt-kick.png')
+
+
 
 }
 
