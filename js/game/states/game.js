@@ -1,10 +1,11 @@
 'use strict'
 
 var game = {}
-var speed = 200
-var map, background, foreground, top, blocked, character, canKick, ballDuration, ballDistance, maxWindUp = 2000,
+var speed = 500
+var map, background, foreground, top, blocked, character, canKick, ballDuration = 2550, ballDistance = 800, maxWindUp = 2000,
     keyK, keyP, keyB, keyN, keyM, keyUp, keyRight, keyDown, keyLeft, keyEsc, escAim, cavehole, golfball, dottedline,
-    kickPercentage
+    kickPercentage, golfballCollision = true
+
 
 function isTouching() {
     golfball.body.stopVelocityOnCollide = false
@@ -51,15 +52,39 @@ function test(e) {
 }
 
 function kick(key) {
+    var calculatedDistance
     if (canKick === true) {
         kickPercentage = key.duration / maxWindUp
 
         if (kickPercentage > 1) {
             kickPercentage = 1
         }
+        calculatedDistance = ballDistance * kickPercentage
 
-        golfball.body.moveTo(ballDuration, ballDistance * kickPercentage, dottedline.angle)
+        golfball.body.moveTo(ballDuration, calculatedDistance, dottedline.angle)
+
+        if (calculatedDistance > 800) {
+          chipKick(calculatedDistance)
+        }
+
     }
+}
+
+function chipKick(ballDuration){
+  golfballCollision = false
+  game.world.bringToTop(golfball)
+  var chipTween = game.add.tween(golfball.scale)
+  chipTween.to({x: 2, y:2}, ballDuration, Phaser.Easing.Linear.InOut)
+  chipTween.onComplete.addOnce(chipEnd, this)
+  chipTween.start()
+}
+
+function chipEnd(){
+  golfballCollision = true
+  game.world.moveDown(golfball)
+  var chipTween = game.add.tween(golfball.scale)
+  chipTween.to({ x: 1, y: 1 }, ballDuration, Phaser.Easing.Linear.Out)
+  chipTween.start()
 }
 
 function detectKick(key) {
@@ -158,7 +183,10 @@ game.update = function() {
     dottedline.y = golfball.y
 
     game.physics.arcade.collide(character, blocked)
-    game.physics.arcade.collide(golfball, blocked)
+
+    if(golfballCollision === true){
+      game.physics.arcade.collide(golfball, blocked)
+    }
     game.physics.arcade.overlap(character, golfball, isTouching)
     game.physics.arcade.overlap(golfball, cavehole, ballInHole)
 
