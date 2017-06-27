@@ -9,10 +9,8 @@ var map, background, foreground, top, blocked, character, canKick, ballDuration 
     kickPercentage, golfballCollision = true,
     chipKickUi, chipKickUi2, stanceUi, puttKickUi, mask, fillPercent = 0,
     fillColor = { r: 255, g: 0, b: 0 },
-    sillhouetteColor = { r: 0, g: 0, b: 0 }
-
-
-
+    sillhouetteColor = { r: 0, g: 0, b: 0 },
+    currentSpriteUi
 
 function isTouching() {
     golfball.body.stopVelocityOnCollide = false
@@ -60,6 +58,7 @@ function test(e) {
 
 function kick(key) {
     var calculatedDistance
+
     if (canKick === true) {
         kickPercentage = key.duration / maxWindUp
 
@@ -67,11 +66,12 @@ function kick(key) {
         if (kickPercentage > 1) {
             kickPercentage = 1
         }
-        console.log(kickPercentage, fillPercent)
+
         calculatedDistance = ballDistance * kickPercentage
 
         golfball.body.moveTo(ballDuration, calculatedDistance, dottedline.angle)
-
+        fillPercent = 0
+        setFillPercent(0, currentSpriteUi)
         if (calculatedDistance > 800) {
             chipKick(calculatedDistance)
         }
@@ -90,25 +90,40 @@ function chipKick(ballDuration) {
 
 function chipEnd() {
     golfballCollision = true
-    game.world.moveDown(golfball)
+    game.world.sendToBack(golfball)
+    game.world.moveUp(golfball)
+
     var chipTween = game.add.tween(golfball.scale)
     chipTween.to({ x: 1, y: 1 }, ballDuration, Phaser.Easing.Linear.Out)
     chipTween.start()
 }
+
+function toggleCurrentUi(sprite){
+    chipKickUi.maskedSprite.visible = false
+    chipKickUi2.maskedSprite.visible = false
+    stanceUi.maskedSprite.visible = false
+    puttKickUi.maskedSprite.visible = false
+    currentSpriteUi = sprite
+    currentSpriteUi.maskedSprite.visible = true
+}
+
 
 function detectKick(key) {
     switch (key.event.code) {
         case 'KeyB':
             ballDuration = 2550
             ballDistance = 400
+            toggleCurrentUi(puttKickUi)
             break
         case 'KeyN':
             ballDuration = 2550
             ballDistance = 800
+            toggleCurrentUi(chipKickUi)
             break
         case 'KeyM':
             ballDuration = 2550
             ballDistance = 1600
+            toggleCurrentUi(chipKickUi2)
             break
         default:
             ballDuration = 2550
@@ -133,6 +148,7 @@ function createUiMaskSprite(srcKey, w, h) {
     obj.maskedBMD = maskedBMD
     maskedSprite = game.add.sprite(0, 0, maskedBMD)
     obj.maskedSprite = maskedSprite
+    obj.name = srcKey
 
     return obj
 }
@@ -181,26 +197,42 @@ game.create = function() {
     golfball = game.add.sprite(500, 400, 'golfball')
     character = game.add.sprite(450, 100, 'characters')
     dottedline = game.add.sprite(golfball.x, golfball.y, 'dottedline')
+    foreground = map.createLayer('Foreground')
 
     character.anchor.setTo(0.5, 0.5)
     golfball.anchor.setTo(0.5, 0.5)
     dottedline.anchor.setTo(0, 0.5)
 
-    foreground = map.createLayer('Foreground')
 
-    chipKickUi = game.add.sprite(game.camera.width - 75, game.camera.height - 100, "chipKickUi")
-    chipKickUi.fixedToCamera = true
-    chipKickUi.visible = false
 
-    puttKickUi = game.add.sprite(game.camera.width - 75, game.camera.height - 100, "puttKickUi")
-    puttKickUi.fixedToCamera = true
-    puttKickUi.visible = false
+    chipKickUi = createUiMaskSprite("chipKickUi", 75, 100)
+    setFillPercent(0, chipKickUi)
+    chipKickUi.maskedSprite.position.setTo(game.camera.width - 75, game.camera.height - 100)
+    chipKickUi.maskedSprite.fixedToCamera = true
+    chipKickUi.maskedSprite.visible = false
+
+    puttKickUi = createUiMaskSprite("puttKickUi", 75, 100)
+    setFillPercent(0, puttKickUi)
+    puttKickUi.maskedSprite.position.setTo(game.camera.width - 75, game.camera.height - 100)
+    puttKickUi.maskedSprite.fixedToCamera = true
+    puttKickUi.maskedSprite.visible = false
 
     chipKickUi2 = createUiMaskSprite('chipKickUi2', 75, 100)
     chipKickUi2.maskedSprite.position.setTo(game.camera.width - 75, game.camera.height - 100)
     setFillPercent(0, chipKickUi2)
-        //chipKickUi2.maskedSprite.visible = false
     chipKickUi2.maskedSprite.fixedToCamera = true
+    chipKickUi2.maskedSprite.visible = false
+
+    stanceUi = createUiMaskSprite('stanceUi', 75, 100)
+    stanceUi.maskedSprite.position.setTo(game.camera.width - 75, game.camera.height - 100)
+    setFillPercent(0, stanceUi)
+    stanceUi.maskedSprite.fixedToCamera = true
+    stanceUi.maskedSprite.visible = false
+
+    currentSpriteUi = stanceUi
+    console.log(currentSpriteUi.name)
+    currentSpriteUi.maskedSprite.visible = true
+
 
     map.setCollisionBetween(1, 100, true, 'Blocked')
 
@@ -221,7 +253,6 @@ game.create = function() {
 
     keyK = game.input.keyboard.addKey(Phaser.KeyCode.K)
     keyK.onUp.add(kick)
-        //keyK.onDown.add(kickPowerUp)
 
     keyP = game.input.keyboard.addKey(Phaser.KeyCode.P)
     keyP.onUp.add(test)
@@ -266,7 +297,7 @@ game.update = function() {
 
     if (game.input.keyboard.isDown(Phaser.Keyboard.K)) {
         if (fillPercent < 100) {
-            setFillPercent(fillPercent, chipKickUi2)
+            setFillPercent(fillPercent, currentSpriteUi)
             fillPercent = (fillPercent + 0.83) % 101
         }
     }
