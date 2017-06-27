@@ -2,11 +2,15 @@
 
 var game = {}
 var speed = 500
-var map, background, foreground, top, blocked, character, canKick, ballDuration = 2550, ballDistance = 800, maxWindUp = 2000,
+var map, background, foreground, top, blocked, character, canKick, ballDuration = 2550,
+    ballDistance = 800,
+    maxWindUp = 2000,
     keyK, keyP, keyB, keyN, keyM, keyUp, keyRight, keyDown, keyLeft, keyEsc, escAim, cavehole, golfball, dottedline,
-    kickPercentage, golfballCollision = true, chipKickUi, chipKickUi2, stanceUi,  puttKickUi, mask, fillPercent = 0,
-    fillColor = {r:255, g:0, b:0}, sillhouetteColor = {r:0, g:0, b:0}, sillhouetteBMD, fillBMD, maskedBMD, maskedSprite,
-    sillhouetteGroup
+    kickPercentage, golfballCollision = true,
+    chipKickUi, chipKickUi2, stanceUi, puttKickUi, mask, fillPercent = 0,
+    fillColor = { r: 255, g: 0, b: 0 },
+    sillhouetteColor = { r: 0, g: 0, b: 0 }
+
 
 
 
@@ -69,34 +73,27 @@ function kick(key) {
         golfball.body.moveTo(ballDuration, calculatedDistance, dottedline.angle)
 
         if (calculatedDistance > 800) {
-          chipKick(calculatedDistance)
+            chipKick(calculatedDistance)
         }
 
     }
 }
 
-// function kickPowerUp(){
-//   for (var i = 0; i < maxWindUp; i++) {
-//     setFillPercent(fillPercent)
-//     fillPercent = (fillPercent + i)%101
-//   }
-// }
-
-function chipKick(ballDuration){
-  golfballCollision = false
-  game.world.bringToTop(golfball)
-  var chipTween = game.add.tween(golfball.scale)
-  chipTween.to({x: 2, y:2}, ballDuration, Phaser.Easing.Linear.InOut)
-  chipTween.onComplete.addOnce(chipEnd, this)
-  chipTween.start()
+function chipKick(ballDuration) {
+    golfballCollision = false
+    game.world.bringToTop(golfball)
+    var chipTween = game.add.tween(golfball.scale)
+    chipTween.to({ x: 2, y: 2 }, ballDuration, Phaser.Easing.Linear.InOut)
+    chipTween.onComplete.addOnce(chipEnd, this)
+    chipTween.start()
 }
 
-function chipEnd(){
-  golfballCollision = true
-  game.world.moveDown(golfball)
-  var chipTween = game.add.tween(golfball.scale)
-  chipTween.to({ x: 1, y: 1 }, ballDuration, Phaser.Easing.Linear.Out)
-  chipTween.start()
+function chipEnd() {
+    golfballCollision = true
+    game.world.moveDown(golfball)
+    var chipTween = game.add.tween(golfball.scale)
+    chipTween.to({ x: 1, y: 1 }, ballDuration, Phaser.Easing.Linear.Out)
+    chipTween.start()
 }
 
 function detectKick(key) {
@@ -104,26 +101,14 @@ function detectKick(key) {
         case 'KeyB':
             ballDuration = 2550
             ballDistance = 400
-            chipKickUi2.visible = false
-            chipKickUi.visible = false
-            stanceUi.visible = false
-            puttKickUi.visible = true
             break
         case 'KeyN':
             ballDuration = 2550
             ballDistance = 800
-            chipKickUi2.visible = false
-            chipKickUi.visible = true
-            stanceUi.visible = false
-            puttKickUi.visible = false
             break
         case 'KeyM':
             ballDuration = 2550
             ballDistance = 1600
-            chipKickUi2.visible = true
-            chipKickUi.visible = false
-            stanceUi.visible = false
-            puttKickUi.visible = false
             break
         default:
             ballDuration = 2550
@@ -131,38 +116,52 @@ function detectKick(key) {
     }
 }
 
-function createSillhouette(srcKey) {
-	var bmd = game.make.bitmapData()
-	// load our texture into the bitmap
-	bmd.load(srcKey)
-	bmd.processPixelRGB(forEachPixel, this)
-  return bmd
+function createUiMaskSprite(srcKey, w, h) {
+    var bmd, fillBMD, maskedBMD, maskedSprite
+    var obj = {}
+
+    //make the bitmapdata sillouette from preloaded png file
+    bmd = game.make.bitmapData()
+    bmd.load(srcKey)
+    bmd.processPixelRGB(forEachPixel, this)
+    obj.sillhouetteBMD = bmd
+
+    fillBMD = game.make.bitmapData(w, h)
+    fillBMD.fill(fillColor.r, fillColor.g, fillColor.b, 1)
+    maskedBMD = game.make.bitmapData(w, h)
+    obj.fillBMD = fillBMD
+    obj.maskedBMD = maskedBMD
+    maskedSprite = game.add.sprite(0, 0, maskedBMD)
+    obj.maskedSprite = maskedSprite
+
+    return obj
 }
 
-function setFillPercent(percent) {
-	var w = maskedBMD.width;
-	var h = maskedBMD.height
-	// need to clear it, otherwise it stacks drawing and looks a mess
-	maskedBMD.clear()
-	// fill from the bottom
-	var fillY = h - ((percent/100)*h)
-	// this shifts the fill
-	var srcRect = {x:0, y:fillY, width:w , height:h}
-	maskedBMD.alphaMask(fillBMD, sillhouetteBMD, srcRect)
+function setFillPercent(percent, obj) {
+    //maskedBMD
+    var w = obj.maskedBMD.width;
+    var h = obj.maskedBMD.height
+        // need to clear it, otherwise it stacks drawing and looks a mess
+    obj.maskedBMD.clear()
+        // fill from the bottom
+    var fillY = h - ((percent / 100) * h)
+        // this shifts the fill
+    var srcRect = { x: 0, y: fillY, width: w, height: h }
+    obj.maskedBMD.alphaMask(obj.fillBMD, obj.sillhouetteBMD, srcRect)
 }
 
 function forEachPixel(pixel) {
-  // processPixelRGB won't take an argument, so we've set our sillhouetteColor globally
-	pixel.r = sillhouetteColor.r
-	pixel.g = sillhouetteColor.g
-	pixel.b = sillhouetteColor.b
-	return pixel
+    // processPixelRGB won't take an argument, so we've set our sillhouetteColor globally
+    pixel.r = sillhouetteColor.r
+    pixel.g = sillhouetteColor.g
+    pixel.b = sillhouetteColor.b
+    return pixel
 }
 
 
 game.create = function() {
     game.physics.startSystem(Phaser.Physics.ARCADE)
-    //game.physics.arcade.gravity.x = 50
+        //game.physics.arcade.gravity.x = 50
 
     // add the map and set bounds. Turn on arcade physics so we can collide with boundaries
     map = game.add.tilemap('map')
@@ -193,32 +192,16 @@ game.create = function() {
     chipKickUi.fixedToCamera = true
     chipKickUi.visible = false
 
-    chipKickUi2 = game.add.sprite(game.camera.width - 75, game.camera.height - 100, "chipKickUi2")
-    chipKickUi2.fixedToCamera = true
-    chipKickUi2.visible = false
-
     puttKickUi = game.add.sprite(game.camera.width - 75, game.camera.height - 100, "puttKickUi")
     puttKickUi.fixedToCamera = true
     puttKickUi.visible = false
 
-    stanceUi = game.add.sprite(game.camera.width - 75, game.camera.height - 100, "stanceUi")
-    //stanceUi.fixedToCamera = false
-    stanceUi.visible = false
+    chipKickUi2 = createUiMaskSprite('chipKickUi2', 75, 100)
+    chipKickUi2.maskedSprite.position.setTo(game.camera.width - 75, game.camera.height - 100)
+    setFillPercent(0, chipKickUi2)
+        //chipKickUi2.maskedSprite.visible = false
+    chipKickUi2.maskedSprite.fixedToCamera = true
 
-    sillhouetteBMD = createSillhouette('puttKickUi')    
-
-
-    // this is the rectangle we will use to fill the sillhouette
-    fillBMD = game.add.bitmapData(75, 100)
-    fillBMD.fill(fillColor.r, fillColor.g, fillColor.b,1)
-    maskedBMD = game.add.bitmapData(75, 100)
-
-    // we need to set the initial mask
-    setFillPercent(0)
-
-    // let's create a sprite to show our masked bitmapdata
-    maskedSprite = game.add.sprite(0,0,maskedBMD)
-  	maskedSprite.position.set(game.camera.width - 75, game.camera.height - 100)
     map.setCollisionBetween(1, 100, true, 'Blocked')
 
     // enable the physics engine only for sprites that need them
@@ -238,7 +221,7 @@ game.create = function() {
 
     keyK = game.input.keyboard.addKey(Phaser.KeyCode.K)
     keyK.onUp.add(kick)
-    //keyK.onDown.add(kickPowerUp)
+        //keyK.onDown.add(kickPowerUp)
 
     keyP = game.input.keyboard.addKey(Phaser.KeyCode.P)
     keyP.onUp.add(test)
@@ -269,8 +252,8 @@ game.update = function() {
 
     game.physics.arcade.collide(character, blocked)
 
-    if(golfballCollision === true){
-      game.physics.arcade.collide(golfball, blocked)
+    if (golfballCollision === true) {
+        game.physics.arcade.collide(golfball, blocked)
     }
     game.physics.arcade.overlap(character, golfball, isTouching)
     game.physics.arcade.overlap(golfball, cavehole, ballInHole)
@@ -282,12 +265,12 @@ game.update = function() {
     character.body.velocity.y = 0
 
     if (game.input.keyboard.isDown(Phaser.Keyboard.K)) {
-      if (fillPercent < 100) {
-        setFillPercent(fillPercent)
-        fillPercent = (fillPercent + 0.83) % 101
-      }
+        if (fillPercent < 100) {
+            setFillPercent(fillPercent, chipKickUi2)
+            fillPercent = (fillPercent + 0.83) % 101
+        }
     }
-  // Check key states every frame.
+    // Check key states every frame.
     // Sprites need a velocity to work with physics
     if (game.input.keyboard.isDown(Phaser.Keyboard.LEFT)) {
         if (canKick === true) {
