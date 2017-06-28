@@ -1,16 +1,19 @@
 'use strict'
 
-var game = {}
-var speed = 500
-var map, background, foreground, top, blocked, character, canKick, ballDuration = 2550,
+var game = {},
+    map, background, foreground, top, blocked, character, dragon1, dragonsNextLocation, dragonsLocationX = 1724, dragonsLocationY = 224, flag, canKick,
+    ballDuration = 2550,
+    speed = 500,
     ballDistance = 800,
     maxWindUp = 2000,
     keyK, keyP, keyB, keyN, keyM, keyUp, keyRight, keyDown, keyLeft, keyEsc, escAim, cavehole, golfball, dottedline,
-    kickPercentage, golfballCollision = true,
-    chipKickUi, chipKickUi2, stanceUi, puttKickUi, mask, fillPercent = 0,
+    kickPercentage,
+    golfballCollision = true,
+    chipKickUi, chipKickUi2, stanceUi, puttKickUi, mask,
+    fillPercent = 0,
     fillColor = { r: 255, g: 0, b: 0 },
     sillhouetteColor = { r: 0, g: 0, b: 0 },
-    currentSpriteUi
+    currentSpriteUi, youWin = false, stroke = 0, par = 4
 
 function shake() {
     fillPercent = 100
@@ -36,10 +39,41 @@ function isTouching() {
 }
 
 function ballInHole() {
+    var text = {}, style = {}, msg, camX, camY
     golfball.destroy()
-    console.log('YOU WIN!')
+    youWin = true
+    var stroke = 3
+    msg = 'YOU WIN!'
+    if (par === stroke){
+      msg = "Par"
+    } else if(stroke === par + 1){
+      msg = "Bogie"
+    } else if(stroke === par + 2 ){
+      msg = "Double Bogie"
+    } else if(stroke === par - 1){
+      msg = "Birdie"
+    } else if(stroke === par - 2){
+      msg = "Eagle"
+    }
+
+    style = { font: "bold 48px Arial", fill: "#ff0000", boundsAlignH: "center", boundsAlignV: "middle", stroke: "#000", strokeThickness: 4 }
+            camX = (game.camera.width / 2) + game.camera.view.x
+            camY = (game.camera.height / 2) + game.camera.view.y
+            text = game.add.text(camX, camY - 75, msg, style)
+            text.anchor.setTo(0.5, 0.5)
+
+            game.time.events.add(Phaser.Timer.SECOND * 3, textDestroy, this)
+
+      function textDestroy () {
+          text.destroy();
+      }
 }
 
+function strokeCounter(){
+  if (youWin === false){
+    stroke++
+  }
+}
 function setForTeeing(char) {
     char.body.velocity.x = 0
     char.body.velocity.y = 0
@@ -70,7 +104,7 @@ function escapeAiming() {
 }
 
 function test(e) {
-    console.log(e)
+    ballInHole()
 }
 
 function kick(key) {
@@ -87,7 +121,8 @@ function kick(key) {
         calculatedDistance = ballDistance * kickPercentage
 
         golfball.body.moveTo(ballDuration, calculatedDistance, dottedline.angle)
-
+        strokeCounter()
+        console.log(stroke)
         if (calculatedDistance > 800) {
             chipKick(calculatedDistance)
         }
@@ -127,7 +162,6 @@ function toggleCurrentUi(sprite) {
     currentSpriteUi = sprite
     currentSpriteUi.maskedSprite.visible = true
 }
-
 
 function detectKick(key) {
     switch (key.event.code) {
@@ -195,6 +229,24 @@ function forEachPixel(pixel) {
     return pixel
 }
 
+// function dragonMove(){
+//   //1291, 224,
+//
+//   console.log(dragon1.x)
+//   if (dragon1.x < 1721){
+//     game.physics.arcade.moveToXY(dragon1, dragonsLocationX, dragonsLocationY, 60, 1000)
+//     dragon1.animations.play("right")
+//   }else if(dragon1.x >= 1723){
+//     dragon1.animations.stop()
+//      game.physics.arcade.moveToXY(dragon1, 1722, 800, 60, 1000)
+//      dragon1.animations.play("down")
+//   //   dragon1.body.velocity.x = 0
+//   //   dragon1.body.velocity.y = 0
+//   //   dragonsLocationY = 4000
+//   //   dragon1.body.moveTo(dragonsLocationX, dragonsLocationY)
+//    }
+// }
+
 
 game.create = function() {
     game.physics.startSystem(Phaser.Physics.ARCADE)
@@ -214,10 +266,14 @@ game.create = function() {
     blocked = map.createLayer('Blocked')
     blocked.visible = false
     top = map.createLayer('Top')
-    cavehole = game.add.sprite(40, 400, 'cavehole')
+    cavehole = game.add.sprite(1800, 1000, 'cavehole')
+    cavehole.anchor.setTo(0.5, 0.5)
     golfball = game.add.sprite(500, 400, 'golfball')
+    flag = game.add.sprite(cavehole.x, cavehole.y, 'flag')
+    flag.anchor.setTo(0, 1)
     character = game.add.sprite(450, 100, 'characters')
-    dottedline = game.add.sprite(golfball.x, golfball.y, 'dottedline')
+    dragon1 = game.add.sprite(1291, 224, 'dragon1')
+    dottedline = game.add.sprite(golfball.x + 40, golfball.y, 'dottedline')
     foreground = map.createLayer('Foreground')
 
     character.anchor.setTo(0.5, 0.5)
@@ -256,9 +312,11 @@ game.create = function() {
 
 
     map.setCollisionBetween(1, 100, true, 'Blocked')
+    map.setCollisionBetween(73, 127, true, 'Foreground')
 
     // enable the physics engine only for sprites that need them
     game.physics.arcade.enable(character, true)
+    game.physics.arcade.enable(dragon1, true)
     game.physics.arcade.enable(golfball, true)
     game.physics.arcade.enable(cavehole, true)
     character.body.collideWorldBounds = true
@@ -267,6 +325,11 @@ game.create = function() {
     character.animations.add('left', [9, 10, 11, 12, 13, 14, 15, 16, 17], 20, true)
     character.animations.add('down', [18, 19, 20, 21, 22, 23, 24, 25, 26], 20, true)
     character.animations.add('up', [0, 1, 2, 3, 4, 5, 6, 7, 8], 20, true)
+
+    dragon1.animations.add('right', [8, 9, 10, 11], 20, true)
+    dragon1.animations.add('left', [4, 5, 6, 7], 20, true)
+    dragon1.animations.add('down', [0, 1, 2, 3], 20, true)
+    dragon1.animations.add('up', [12, 13, 14, 15], 20, true)
 
     golfball.body.collideWorldBounds = true
     golfball.body.bounce.set(0.25)
@@ -290,17 +353,13 @@ game.create = function() {
     keyEsc.onDown.add(escapeAiming)
 }
 
-/*
- *
- * END OF CREATE FUNCTION
- *
- */
-
 game.update = function() {
     canKick = false
     dottedline.visible = false
     dottedline.x = golfball.x
     dottedline.y = golfball.y
+
+    //dragonMove()
 
     game.physics.arcade.collide(character, blocked)
 
