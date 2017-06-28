@@ -12,6 +12,21 @@ var map, background, foreground, top, blocked, character, canKick, ballDuration 
     sillhouetteColor = { r: 0, g: 0, b: 0 },
     currentSpriteUi
 
+function shake() {
+    fillPercent = 100
+    setFillPercent(100, currentSpriteUi)
+    game.camera.shake(0.0025, 100)
+        /*    let rand = game.rnd.integerInRange(-2, 2)
+            currentSpriteUi.maskedSprite.fixedToCamera = false
+            origin = currentSpriteUi.maskedSprite.x
+            console.log(currentSpriteUi.maskedSprite.x, game.camera.width - 75)
+
+            currentSpriteUi.maskedSprite.x = origin + rand
+            if (currentSpriteUi.maskedSprite.x < origin - 5 || currentSpriteUi.maskedSprite.x > origin + 5) {
+                currentSpriteUi.maskedSprite.x = origin
+            }*/
+}
+
 function isTouching() {
     golfball.body.stopVelocityOnCollide = false
     if (golfball.body.velocity.x === 0 && golfball.body.velocity.y === 0 && escAim === false) {
@@ -28,6 +43,8 @@ function ballInHole() {
 function setForTeeing(char) {
     char.body.velocity.x = 0
     char.body.velocity.y = 0
+
+
 
     if (dottedline.angle < 90 && dottedline.angle > -90) {
         char.x = golfball.x - 25
@@ -70,11 +87,15 @@ function kick(key) {
         calculatedDistance = ballDistance * kickPercentage
 
         golfball.body.moveTo(ballDuration, calculatedDistance, dottedline.angle)
-        fillPercent = 0
-        setFillPercent(0, currentSpriteUi)
+
         if (calculatedDistance > 800) {
             chipKick(calculatedDistance)
         }
+
+        currentSpriteUi.maskedSprite.position.setTo(game.camera.width - 75, game.camera.height - 100)
+        currentSpriteUi.maskedSprite.fixedToCamera = true
+        fillPercent = 0
+        setFillPercent(0, currentSpriteUi)
 
     }
 }
@@ -98,7 +119,7 @@ function chipEnd() {
     chipTween.start()
 }
 
-function toggleCurrentUi(sprite){
+function toggleCurrentUi(sprite) {
     chipKickUi.maskedSprite.visible = false
     chipKickUi2.maskedSprite.visible = false
     stanceUi.maskedSprite.visible = false
@@ -296,9 +317,13 @@ game.update = function() {
     character.body.velocity.y = 0
 
     if (game.input.keyboard.isDown(Phaser.Keyboard.K)) {
-        if (fillPercent < 100) {
-            setFillPercent(fillPercent, currentSpriteUi)
-            fillPercent = (fillPercent + 0.83) % 101
+        if (canKick === true) {
+            if (fillPercent < 100) {
+                setFillPercent(fillPercent, currentSpriteUi)
+                fillPercent = (fillPercent + 0.83) % 101
+            } else if (fillPercent >= 100) {
+                shake()
+            }
         }
     }
     // Check key states every frame.
