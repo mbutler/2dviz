@@ -13,7 +13,7 @@ var game = {},
     fillPercent = 0,
     fillColor = { r: 255, g: 0, b: 0 },
     sillhouetteColor = { r: 0, g: 0, b: 0 },
-    currentSpriteUi, youWin = false, stroke = 0, par = 4
+    currentSpriteUi, youWin = false, stroke = 0, par = 4, cameraFollow = false
 
 function shake() {
     fillPercent = 100
@@ -229,6 +229,12 @@ function forEachPixel(pixel) {
     return pixel
 }
 
+function cameraTweenToHole(sec){
+  var holeDistance = game.physics.arcade.distanceBetween(golfball, cavehole)
+  game.add.tween(game.camera).to( { y: cavehole.y - game.camera.height/2, x: cavehole.x - game.camera.width/2 }, holeDistance, Phaser.Easing.Out, true);
+  game.time.events.add(Phaser.Timer.SECOND * sec, function (){cameraFollow = true}, this)
+}
+
 // function dragonMove(){
 //   //1291, 224,
 //
@@ -266,7 +272,7 @@ game.create = function() {
     blocked = map.createLayer('Blocked')
     blocked.visible = false
     top = map.createLayer('Top')
-    cavehole = game.add.sprite(1800, 1000, 'cavehole')
+    cavehole = game.add.sprite(3000, 3000, 'cavehole')
     cavehole.anchor.setTo(0.5, 0.5)
     golfball = game.add.sprite(500, 400, 'golfball')
     flag = game.add.sprite(cavehole.x, cavehole.y, 'flag')
@@ -351,6 +357,9 @@ game.create = function() {
 
     keyEsc = game.input.keyboard.addKey(Phaser.KeyCode.ESC)
     keyEsc.onDown.add(escapeAiming)
+
+    cameraTweenToHole(6)
+
 }
 
 game.update = function() {
@@ -369,8 +378,12 @@ game.update = function() {
     game.physics.arcade.overlap(character, golfball, isTouching)
     game.physics.arcade.overlap(golfball, cavehole, ballInHole)
 
+    //game.camera.y = cavehole.y - game.camera.height/2
+    //game.camera.x = cavehole.x - game.camera.width/2
     // lock the camera on our sprite guy and follow
+    if(cameraFollow === true){
     this.camera.follow(character, Phaser.Camera.FOLLOW_LOCKON)
+    }
 
     character.body.velocity.x = 0
     character.body.velocity.y = 0
