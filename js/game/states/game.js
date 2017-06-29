@@ -13,7 +13,7 @@ var game = {},
     fillPercent = 0,
     fillColor = { r: 255, g: 0, b: 0 },
     sillhouetteColor = { r: 0, g: 0, b: 0 },
-    currentSpriteUi, youWin = false, stroke = 0, par = 4, cameraFollow = false
+    currentSpriteUi, youWin = false, stroke = 0, par = 4, cameraFollow = true
 
 function shake() {
     fillPercent = 100
@@ -42,19 +42,35 @@ function ballInHole() {
     var text = {}, style = {}, msg, camX, camY
     golfball.destroy()
     youWin = true
-    var stroke = 3
     msg = 'YOU WIN!'
-    if (par === stroke){
+    switch(stroke){
+      case 1:
+      msg = "Hole in one!"
+      break
+
+      case par:
       msg = "Par"
-    } else if(stroke === par + 1){
+      break
+
+      case par + 1:
       msg = "Bogie"
-    } else if(stroke === par + 2 ){
+      break
+
+      case par + 2:
       msg = "Double Bogie"
-    } else if(stroke === par - 1){
+      break
+
+      case par - 1:
       msg = "Birdie"
-    } else if(stroke === par - 2){
+      break
+
+      case par - 2:
       msg = "Eagle"
+      break
+
+      default: stroke + "over par"
     }
+
 
     style = { font: "bold 48px Arial", fill: "#ff0000", boundsAlignH: "center", boundsAlignV: "middle", stroke: "#000", strokeThickness: 4 }
             camX = (game.camera.width / 2) + game.camera.view.x
@@ -103,10 +119,6 @@ function escapeAiming() {
     }
 }
 
-function test(e) {
-    ballInHole()
-}
-
 function kick(key) {
     var calculatedDistance
 
@@ -133,6 +145,7 @@ function kick(key) {
         setFillPercent(0, currentSpriteUi)
 
     }
+
 }
 
 function chipKick(ballDuration) {
@@ -234,25 +247,41 @@ function cameraTweenToHole(sec){
   game.add.tween(game.camera).to( { y: cavehole.y - game.camera.height/2, x: cavehole.x - game.camera.width/2 }, holeDistance, Phaser.Easing.Out, true);
   game.time.events.add(Phaser.Timer.SECOND * sec, function (){cameraFollow = true}, this)
 }
+function test(e) {
+    var rand = game.rnd.integerInRange(1000, 5000)
+    var move1 = monsterMove(dragon1, rand, 50, 40)
+    var move2 = monsterMove(dragon1, rand, 50, 400)
+    var move3 = monsterMove(dragon1, rand, 500, 400)
+    var move4 = monsterMove(dragon1, rand, 1291, 224)
 
-// function dragonMove(){
-//   //1291, 224,
-//
-//   console.log(dragon1.x)
-//   if (dragon1.x < 1721){
-//     game.physics.arcade.moveToXY(dragon1, dragonsLocationX, dragonsLocationY, 60, 1000)
-//     dragon1.animations.play("right")
-//   }else if(dragon1.x >= 1723){
-//     dragon1.animations.stop()
-//      game.physics.arcade.moveToXY(dragon1, 1722, 800, 60, 1000)
-//      dragon1.animations.play("down")
-//   //   dragon1.body.velocity.x = 0
-//   //   dragon1.body.velocity.y = 0
-//   //   dragonsLocationY = 4000
-//   //   dragon1.body.moveTo(dragonsLocationX, dragonsLocationY)
-//    }
-// }
 
+    dragon1.animations.play("left", true)
+    move1.onComplete.add(function(){dragon1.animations.play("down", true)}, this)
+    move2.onComplete.add(function(){dragon1.animations.play("right", true)}, this)
+    move3.onComplete.add(function(){dragon1.animations.play("right", true)}, this)
+    move4.onComplete.add(function(){dragon1.animations.play("left", true)})
+
+    move1.chain(move2)
+    move2.chain(move3)
+    move3.chain(move4)
+    move4.chain(move1)
+
+    move1.start()
+}
+
+function monsterMove(monsterName, monsterSpeed, monsterX, monsterY){
+  var sweetTween = game.make.tween(monsterName).to( {x: monsterX, y: monsterY}, monsterSpeed, Phaser.Easing.Out )
+  return sweetTween
+}
+function monsterPenalty(){
+  if (!character.hasOverlapped && !dragon1.hasOverlapped) {
+         dragon1.hasOverlapped = character.hasOverlapped = true;
+         stroke++
+         console.log(stroke)
+         game.time.events.add(Phaser.Timer.SECOND * 3, function(){dragon1.hasOverlapped = character.hasOverlapped = false}, this)
+     }
+
+}
 
 game.create = function() {
     game.physics.startSystem(Phaser.Physics.ARCADE)
@@ -371,12 +400,16 @@ game.update = function() {
     //dragonMove()
 
     game.physics.arcade.collide(character, blocked)
+    game.physics.arcade.collide(golfball, dragon1)
+    game.physics.arcade.overlap(character, dragon1, monsterPenalty)
+
+
 
     if (golfballCollision === true) {
         game.physics.arcade.collide(golfball, blocked)
+        game.physics.arcade.overlap(golfball, cavehole, ballInHole)
     }
     game.physics.arcade.overlap(character, golfball, isTouching)
-    game.physics.arcade.overlap(golfball, cavehole, ballInHole)
 
     //game.camera.y = cavehole.y - game.camera.height/2
     //game.camera.x = cavehole.x - game.camera.width/2
