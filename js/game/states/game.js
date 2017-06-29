@@ -247,26 +247,73 @@ function cameraTweenToHole(sec){
   game.add.tween(game.camera).to( { y: cavehole.y - game.camera.height/2, x: cavehole.x - game.camera.width/2 }, holeDistance, Phaser.Easing.Out, true);
   game.time.events.add(Phaser.Timer.SECOND * sec, function (){cameraFollow = true}, this)
 }
+
 function test(e) {
-    var rand = game.rnd.integerInRange(1000, 5000)
-    var move1 = monsterMove(dragon1, rand, 50, 40)
-    var move2 = monsterMove(dragon1, rand, 50, 400)
-    var move3 = monsterMove(dragon1, rand, 500, 400)
-    var move4 = monsterMove(dragon1, rand, 1291, 224)
+  //console.log(dragon1.x, dragon1.y)
+  dragonCreep()
+}
 
 
+function dragonCreepAngle(p1, p2){
+  // angle in radians
+  var angleRadians = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+
+  // angle in degrees
+  var angleDeg = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+  return angleDeg
+}
+
+
+function dragonCreep(){
+  var treeLocations = [{x: 285, y: 216}, {x: 818, y: 266}, {x:1291, y:224}, {x:1165, y:558}, {x:824, y:800}, {x:348, y:675}]
+  var treeRandomIndex = game.rnd.integerInRange(0, treeLocations.length - 1)
+
+  var treeIndex = treeRandomIndex
+  //dragonCreepAngle(treeLocations[treeIndex], dragon1)
+  var tree = treeLocations[treeIndex]
+  var angleDeg = dragonCreepAngle(tree, dragon1)
+  console.log(angleDeg)
+  if(angleDeg > 45 && angleDeg < 135){
+    dragon1.animations.play("up", true)
+  } else if(angleDeg > 135 || angleDeg < -135){
+    dragon1.animations.play("right", true)
+  } else if(angleDeg < -45 && angleDeg > -135){
+    dragon1.animations.play("down", true)
+  } else if(angleDeg > 0 || angleDeg > -45){
     dragon1.animations.play("left", true)
-    move1.onComplete.add(function(){dragon1.animations.play("down", true)}, this)
-    move2.onComplete.add(function(){dragon1.animations.play("right", true)}, this)
-    move3.onComplete.add(function(){dragon1.animations.play("right", true)}, this)
-    move4.onComplete.add(function(){dragon1.animations.play("left", true)})
+  }
+//  if (dottedline.angle < 90 && dottedline.angle > -90) {
 
-    move1.chain(move2)
-    move2.chain(move3)
-    move3.chain(move4)
-    move4.chain(move1)
+  var rand = game.rnd.integerInRange(1000, 5000)
+  var move1 = monsterMove(dragon1, rand, treeLocations[treeIndex].x,     treeLocations[treeIndex].y)
+  move1.onComplete.add(function(){dragon1.animations.stop()}, this)
+  move1.start()
+}
 
-    move1.start()
+
+
+
+
+function dragonPatrol(){
+  var rand = game.rnd.integerInRange(1000, 5000)
+  var move1 = monsterMove(dragon1, rand, 50, 40)
+  var move2 = monsterMove(dragon1, rand, 50, 400)
+  var move3 = monsterMove(dragon1, rand, 500, 400)
+  var move4 = monsterMove(dragon1, rand, 1291, 224)
+
+
+  dragon1.animations.play("left", true)
+  move1.onComplete.add(function(){dragon1.animations.play("down", true)}, this)
+  move2.onComplete.add(function(){dragon1.animations.play("right", true)}, this)
+  move3.onComplete.add(function(){dragon1.animations.play("right", true)}, this)
+  move4.onComplete.add(function(){dragon1.animations.play("left", true)})
+
+  move1.chain(move2)
+  move2.chain(move3)
+  move3.chain(move4)
+  move4.chain(move1)
+
+  move1.start()
 }
 
 function monsterMove(monsterName, monsterSpeed, monsterX, monsterY){
@@ -389,6 +436,7 @@ game.create = function() {
 
     cameraTweenToHole(6)
 
+    //game.time.events.loop(Phaser.Timer.SECOND * 12, dragonCreep, this)
 }
 
 game.update = function() {
