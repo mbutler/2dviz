@@ -247,15 +247,15 @@ function angleBetweenPoints (p1, p2) {
   return angleDeg
 }
 
-// gets a list of x, y coordinates of every tree of one type
-function getTrees () {
-  var treeList = [],
+// gets a list of x, y coordinates of every tile of some index value
+function getTileLocations (tileIndex, layer) {
+  var tileList = [],
     tile,
-    treeXY = {},
+    tileXY = {},
     i = 0,
     j = 0
 
-    // loop through map object, counting tiles with an index of 92 (one of the tree tiles)
+    // loop through map object, counting tiles with an index value 
   _.forEach(map.layers[1].data, function (val) {
     _.forEach(val, function (data) {
       if (data.index === 92) { j++ }
@@ -264,13 +264,13 @@ function getTrees () {
 
   // iterate over list of tiles, constructing x,y coordinates
   for (i = 0; i < j; i++) {
-    treeXY = {}
-    tile = map.searchTileIndex(92, i, false, 'Foreground')
-    treeXY.x = tile.x * 32 + _.random(0, 100); treeXY.y = tile.y * 32 + _.random(0, 100)
-    treeList.push(treeXY)
+    tileXY = new Phaser.Point()
+    tile = map.searchTileIndex(tileIndex, i, false, layer)
+    tileXY.set(tile.x * 32, tile.y * 32)
+    tileList.push(tileXY)
   }
 
-  return treeList
+  return tileList
 }
 
 // returns an appropriate facing direction based on angle
@@ -288,14 +288,14 @@ function directionFromAngle (angleDeg) {
 
 function dragonCreep () {
   var treeRandomIndex = game.rnd.integerInRange(0, treeLocations.length - 1)
-  var treeIndex = treeRandomIndex
-  var tree = treeLocations[treeIndex]
+  var i = treeRandomIndex
+  var tree = treeLocations[i]
   var angleDeg = angleBetweenPoints(tree, dragon1)
 
   dragon1.animations.play(directionFromAngle(angleDeg), true)
 
   var randomDuration = game.rnd.integerInRange(1000, 5000)
-  var move1 = makeSpriteTween(dragon1, randomDuration, treeLocations[treeIndex].x, treeLocations[treeIndex].y)
+  var move1 = makeSpriteTween(dragon1, randomDuration, treeLocations[i].x + _.random(0, 100), treeLocations[i].y + _.random(0, 100))
   move1.onComplete.add(function () { dragon1.animations.stop() }, this)
   move1.start()
 }
@@ -360,7 +360,7 @@ game.create = function () {
     // the first parameter is the name given in Tiled, second is the cache name given in preloader.js
   map.addTilesetImage('grass-tiles-2-small', 'grass')
   map.addTilesetImage('tree2-final', 'tree')
-  treeLocations = getTrees()
+  treeLocations = getTileLocations(92, 'Foreground')
 
   // need to refer to these layers by the layer name in Tiled
   // add the character before the Foreground layer to make it look like he's walking behind
