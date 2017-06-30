@@ -14,6 +14,8 @@ preloader.preload = function() {
     this.game.load.image('stanceUi', 'images/stance.png')
     this.game.load.image('puttKickUi', 'images/putt-kick.png')
     this.game.load.image('flag', 'images/flag.png')
+    this.game.load.script('BlurX', 'https://cdn.rawgit.com/photonstorm/phaser/master/v2/filters/BlurX.js');
+    this.game.load.script('BlurY', 'https://cdn.rawgit.com/photonstorm/phaser/master/v2/filters/BlurY.js');
 
 
 

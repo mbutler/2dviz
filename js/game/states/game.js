@@ -1,7 +1,9 @@
 'use strict'
+var _ = require('lodash')
 
 var game = {},
-    map, background, foreground, top, blocked, character, dragon1, dragonsNextLocation, dragonsLocationX = 1724, dragonsLocationY = 224, flag, canKick,
+    map, background, foreground, top, blocked, character, dragon1, dragonsNextLocation, dragonsLocationX = 1724, dragonsLocationY = 224,
+    flag, canKick,
     ballDuration = 2550,
     speed = 500,
     ballDistance = 800,
@@ -9,7 +11,7 @@ var game = {},
     keyK, keyP, keyB, keyN, keyM, keyUp, keyRight, keyDown, keyLeft, keyEsc, escAim, cavehole, golfball, dottedline,
     kickPercentage,
     golfballCollision = true,
-    chipKickUi, chipKickUi2, stanceUi, puttKickUi, mask,
+    chipKickUi, chipKickUi2, stanceUi, puttKickUi, mask, strokeUiText, blurX, blurY, blurOn = false,
     fillPercent = 0,
     fillColor = { r: 255, g: 0, b: 0 },
     sillhouetteColor = { r: 0, g: 0, b: 0 },
@@ -88,6 +90,7 @@ function ballInHole() {
 function strokeCounter(){
   if (youWin === false){
     stroke++
+    strokeUiText.setText("Stroke " + stroke)
   }
 }
 function setForTeeing(char) {
@@ -250,7 +253,10 @@ function cameraTweenToHole(sec){
 
 function test(e) {
   //console.log(dragon1.x, dragon1.y)
+  //var tile = map.searchTileIndex(99, 0, false, 'Foreground')
+  //console.log(tile.x, tile.y)
   dragonCreep()
+
 }
 
 
@@ -264,28 +270,54 @@ function dragonCreepAngle(p1, p2){
 }
 
 
+
+function getTrees() {
+  var treeList = []
+  var tile, treeXY = {}, i = 0, j = 0
+
+
+  _.forEach(map.layers[1].data, function(val) {
+    _.forEach(val, function(data) {
+      if (data.index === 92) {j++}
+    })
+  })
+
+  for (i = 0; i < j; i++) {
+    treeXY = {}
+    tile = map.searchTileIndex(92, i, false, 'Foreground')
+    treeXY.x = tile.x * 32 + _.random(0, 100); treeXY.y = tile.y * 32 + _.random(0, 100)
+    treeList.push(treeXY)
+  }
+
+  return treeList
+}
+
 function dragonCreep(){
-  var treeLocations = [{x: 285, y: 216}, {x: 818, y: 266}, {x:1291, y:224}, {x:1165, y:558}, {x:824, y:800}, {x:348, y:675}]
+  //var treeLocations = [{x: 285, y: 216}, {x: 818, y: 266}, {x:1291, y:224}, {x:1165, y:558}, {x:824, y:800}, {x:348, y:675}]
+  var treeLocations = getTrees()
+  //var treeLocations = [{x:824, y:800}, {x: 818, y: 266}]
+  console.log(treeLocations)
   var treeRandomIndex = game.rnd.integerInRange(0, treeLocations.length - 1)
 
   var treeIndex = treeRandomIndex
-  //dragonCreepAngle(treeLocations[treeIndex], dragon1)
+
   var tree = treeLocations[treeIndex]
-  var angleDeg = dragonCreepAngle(tree, dragon1)
-  console.log(angleDeg)
-  if(angleDeg > 45 && angleDeg < 135){
-    dragon1.animations.play("up", true)
-  } else if(angleDeg > 135 || angleDeg < -135){
-    dragon1.animations.play("right", true)
-  } else if(angleDeg < -45 && angleDeg > -135){
-    dragon1.animations.play("down", true)
-  } else if(angleDeg > 0 || angleDeg > -45){
-    dragon1.animations.play("left", true)
+  if (tree.x != dragon1.x){
+    var angleDeg = dragonCreepAngle(tree, dragon1)
+    console.log(angleDeg)
+    if(angleDeg >= 45 && angleDeg <= 135){
+      dragon1.animations.play("up", true)
+    } else if(angleDeg > 135 || angleDeg < -135){
+      dragon1.animations.play("right", true)
+    } else if(angleDeg < -45 && angleDeg > -135){
+      dragon1.animations.play("down", true)
+    } else if(angleDeg >= 0 || angleDeg > -45){
+      dragon1.animations.play("left", true)
+    }
   }
-//  if (dottedline.angle < 90 && dottedline.angle > -90) {
 
   var rand = game.rnd.integerInRange(1000, 5000)
-  var move1 = monsterMove(dragon1, rand, treeLocations[treeIndex].x,     treeLocations[treeIndex].y)
+  var move1 = monsterMove(dragon1, rand, treeLocations[treeIndex].x, treeLocations[treeIndex].y)
   move1.onComplete.add(function(){dragon1.animations.stop()}, this)
   move1.start()
 }
@@ -323,9 +355,20 @@ function monsterMove(monsterName, monsterSpeed, monsterX, monsterY){
 function monsterPenalty(){
   if (!character.hasOverlapped && !dragon1.hasOverlapped) {
          dragon1.hasOverlapped = character.hasOverlapped = true;
-         stroke++
-         console.log(stroke)
-         game.time.events.add(Phaser.Timer.SECOND * 3, function(){dragon1.hasOverlapped = character.hasOverlapped = false}, this)
+         strokeCounter()
+         game.camera.shake(0.0125, 1000)
+
+         blurX = game.add.filter('BlurX')
+       	 blurY = game.add.filter('BlurY')
+
+         blurX.blur = 32
+         blurY.blur = 1
+
+         character.filters = [blurX, blurY];
+
+         game.time.events.add(Phaser.Timer.SECOND * 3, function(){dragon1.hasOverlapped = character.hasOverlapped = false;
+           blurX.blur = 0; blurY.blur = 0;         character.filters = [blurX, blurY];
+         }, this)
      }
 
 }
@@ -436,7 +479,12 @@ game.create = function() {
 
     cameraTweenToHole(6)
 
-    //game.time.events.loop(Phaser.Timer.SECOND * 12, dragonCreep, this)
+    strokeUiText = game.add.text(game.camera.width - 225, game.camera.height - 15, "Stroke " + stroke, { font: "25px Arial", fill: "#000000", align: "center" });
+    strokeUiText.fixedToCamera = true
+    strokeUiText.anchor.set(0.5);
+    strokeUiText.inputEnabled = true
+
+    game.time.events.loop(Phaser.Timer.SECOND * 12, dragonCreep, this)
 }
 
 game.update = function() {
