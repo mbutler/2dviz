@@ -70,7 +70,8 @@ function ballInHole() {
       msg = "Eagle"
       break
 
-      default: stroke + "over par"
+      default:
+      msg = stroke - par + " over par"
     }
 
 
@@ -80,11 +81,8 @@ function ballInHole() {
             text = game.add.text(camX, camY - 75, msg, style)
             text.anchor.setTo(0.5, 0.5)
 
-            game.time.events.add(Phaser.Timer.SECOND * 3, textDestroy, this)
+            game.time.events.add(Phaser.Timer.SECOND * 3, function() {text.destroy()}, this)
 
-      function textDestroy () {
-          text.destroy();
-      }
 }
 
 function strokeCounter(){
@@ -305,13 +303,13 @@ function dragonCreep(){
   if (tree.x != dragon1.x){
     var angleDeg = dragonCreepAngle(tree, dragon1)
     console.log(angleDeg)
-    if(angleDeg >= 45 && angleDeg <= 135){
+    if(_.inRange(angleDeg, 45, 136)){
       dragon1.animations.play("up", true)
-    } else if(angleDeg > 135 || angleDeg < -135){
+    } else if(_.inRange(angleDeg, 135, 181) || _.inRange(angleDeg, -135, -180)){
       dragon1.animations.play("right", true)
-    } else if(angleDeg < -45 && angleDeg > -135){
+    } else if(_.inRange(angleDeg, -44, -136)){
       dragon1.animations.play("down", true)
-    } else if(angleDeg >= 0 || angleDeg > -45){
+    } else if(_.inRange(angleDeg, -45, 46)){
       dragon1.animations.play("left", true)
     }
   }
@@ -357,6 +355,7 @@ function monsterPenalty(){
          dragon1.hasOverlapped = character.hasOverlapped = true;
          strokeCounter()
          game.camera.shake(0.0125, 1000)
+         game.camera.flash(0xff0000, 500)
 
          blurX = game.add.filter('BlurX')
        	 blurY = game.add.filter('BlurY')
@@ -366,11 +365,12 @@ function monsterPenalty(){
 
          character.filters = [blurX, blurY];
 
-         game.time.events.add(Phaser.Timer.SECOND * 3, function(){dragon1.hasOverlapped = character.hasOverlapped = false;
-           blurX.blur = 0; blurY.blur = 0;         character.filters = [blurX, blurY];
+         game.time.events.add(Phaser.Timer.SECOND * 3, function() {
+           dragon1.hasOverlapped = character.hasOverlapped = false
+           blurX.blur = 0; blurY.blur = 0
+           character.filters = [blurX, blurY]
          }, this)
      }
-
 }
 
 game.create = function() {
@@ -432,7 +432,6 @@ game.create = function() {
     stanceUi.maskedSprite.visible = false
 
     currentSpriteUi = stanceUi
-    console.log(currentSpriteUi.name)
     currentSpriteUi.maskedSprite.visible = true
 
 
@@ -496,7 +495,7 @@ game.update = function() {
     //dragonMove()
 
     game.physics.arcade.collide(character, blocked)
-    game.physics.arcade.collide(golfball, dragon1)
+    game.physics.arcade.collide(golfball, dragon1, function(){dragon1.destroy()})
     game.physics.arcade.overlap(character, dragon1, monsterPenalty)
 
 
