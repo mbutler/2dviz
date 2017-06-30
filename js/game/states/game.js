@@ -15,7 +15,7 @@ var game = {},
   fillPercent = 0,
   fillColor = { r: 255, g: 0, b: 0 },
   sillhouetteColor = { r: 0, g: 0, b: 0 },
-  currentSpriteUi, youWin = false, stroke = 0, par = 4, cameraFollow = true
+  currentSpriteUi, youWin = false, stroke = 0, par = 4, cameraFollow = false
 
 function shake () {
   fillPercent = 100
@@ -234,7 +234,7 @@ function cameraTweenToHole (sec) {
 }
 
 function test (e) {
-  dragonCreep()
+  console.log(map)
 }
 
 // returns an angle given two points
@@ -255,7 +255,7 @@ function getTileLocations (tileIndex, layer) {
     i = 0,
     j = 0
 
-    // loop through map object, counting tiles with an index value 
+    // loop through map object, counting tiles with an index value
   _.forEach(map.layers[1].data, function (val) {
     _.forEach(val, function (data) {
       if (data.index === 92) { j++ }
@@ -359,6 +359,7 @@ game.create = function () {
 
     // the first parameter is the name given in Tiled, second is the cache name given in preloader.js
   map.addTilesetImage('grass-tiles-2-small', 'grass')
+  map.addTilesetImage('moretrees', 'moretrees')
   map.addTilesetImage('tree2-final', 'tree')
   treeLocations = getTileLocations(92, 'Foreground')
 
@@ -368,7 +369,7 @@ game.create = function () {
   blocked = map.createLayer('Blocked')
   blocked.visible = false
   top = map.createLayer('Top')
-  cavehole = game.add.sprite(3000, 3000, 'cavehole')
+  cavehole = game.add.sprite(_.random(200, 3000), _.random(200, 3000), 'cavehole')
   cavehole.anchor.setTo(0.5, 0.5)
   golfball = game.add.sprite(500, 400, 'golfball')
   flag = game.add.sprite(cavehole.x, cavehole.y, 'flag')
@@ -409,7 +410,7 @@ game.create = function () {
   currentSpriteUi = stanceUi
   currentSpriteUi.maskedSprite.visible = true
 
-  map.setCollisionBetween(1, 100, true, 'Blocked')
+  map.setCollisionBetween(1, 1000, true, 'Blocked')
   map.setCollisionBetween(73, 127, true, 'Foreground')
 
   // enable the physics engine only for sprites that need them
@@ -456,7 +457,7 @@ game.create = function () {
   strokeUiText.fixedToCamera = true
   strokeUiText.anchor.set(0.5)
   strokeUiText.inputEnabled = true
-  
+
 
   game.time.events.loop(Phaser.Timer.SECOND * 12, dragonCreep, this)
 }

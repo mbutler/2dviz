@@ -1,0 +1,12 @@
+{ "columns":22,
+ "image":"moretrees.png",
+ "imageheight":559,
+ "imagewidth":735,
+ "margin":0,
+ "name":"moretrees",
+ "spacing":0,
+ "tilecount":374,
+ "tileheight":32,
+ "tilewidth":32,
+ "type":"tileset"
+}

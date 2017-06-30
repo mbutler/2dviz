@@ -5,6 +5,7 @@ preloader.preload = function() {
     this.game.load.spritesheet('dragon1', 'images/dragon1.png', 96, 96, 32)
     this.game.load.tilemap('map', 'images/map.json', null, Phaser.Tilemap.TILED_JSON)
     this.game.load.image('grass', 'images/grass-tiles-2-small.png')
+    this.game.load.image('moretrees', 'images/moretrees.png')
     this.game.load.image('tree', 'images/tree2-final.png')
     this.game.load.image('cavehole', 'images/cavehole.png')
     this.game.load.image('dottedline', 'images/dottedline.png')
