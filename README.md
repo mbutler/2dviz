@@ -1,3 +1,3 @@
 # 2dviz
 
-http://phaser.io/sandbox/rWIJwRJF
+https://github.com/lukewilde/phaser-js-boilerplate
