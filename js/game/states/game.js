@@ -2,7 +2,7 @@
 var _ = require('lodash')
 
 var game = {},
-    map, background, foreground, top, blocked, character, dragon1, dragonsNextLocation, dragonsLocationX = 1724,
+    map, background, foreground, middleground, blocked, character, dragon1, dragonsNextLocation, dragonsLocationX = 1724,
     dragonsLocationY = 224,
     flag, canKick,
     ballDuration = 2550,
@@ -368,9 +368,9 @@ game.create = function() {
     game.world.setBounds(0, 0, 3200, 3200)
 
     // the first parameter is the name given in Tiled, second is the cache name given in preloader.js
-    map.addTilesetImage('grass-tiles-2-small', 'grass')
+    map.addTilesetImage('grass-tiles', 'grass')
     map.addTilesetImage('moretrees', 'moretrees')
-    map.addTilesetImage('tree2-final', 'tree')
+    map.addTilesetImage('tree', 'tree')
     treeLocations = getTileLocations(92, 'Foreground')
 
     // need to refer to these layers by the layer name in Tiled
@@ -378,7 +378,7 @@ game.create = function() {
     background = map.createLayer('Background')
     blocked = map.createLayer('Blocked')
     blocked.visible = false
-    top = map.createLayer('Top')
+    middleground = map.createLayer('Middleground')
     cavehole = game.add.sprite(_.random(200, 3000), _.random(200, 3000), 'cavehole')
     cavehole.anchor.setTo(0.5, 0.5)
     golfball = game.add.sprite(500, 400, 'golfball')
