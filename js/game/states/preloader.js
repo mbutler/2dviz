@@ -3,8 +3,9 @@ var preloader = {}
 preloader.preload = function() {
     this.game.load.spritesheet('characters', 'images/vx_characters.png', 64, 64, 32)
     this.game.load.spritesheet('dragon1', 'images/dragon1.png', 96, 96, 32)
-    this.game.load.tilemap('map', 'images/map.json', null, Phaser.Tilemap.TILED_JSON)
+    this.game.load.tilemap('map', 'images/generated-map.json', null, Phaser.Tilemap.TILED_JSON)
     this.game.load.image('grass', 'images/grass-tiles.png')
+    this.game.load.image('terrain_atlas', 'images/terrain_atlas.png')
     this.game.load.image('moretrees', 'images/moretrees.png')
     this.game.load.image('tree', 'images/tree.png')
     this.game.load.image('cavehole', 'images/cavehole.png')

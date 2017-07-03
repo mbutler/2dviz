@@ -371,6 +371,7 @@ game.create = function() {
     map.addTilesetImage('grass-tiles', 'grass')
     map.addTilesetImage('moretrees', 'moretrees')
     map.addTilesetImage('tree', 'tree')
+    map.addTilesetImage('terrain_atlas', 'terrain_atlas')
     treeLocations = getTileLocations(92, 'Foreground')
 
     // need to refer to these layers by the layer name in Tiled
