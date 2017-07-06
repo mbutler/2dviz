@@ -1,40 +1,53 @@
 'use strict'
 var _ = require('lodash')
-
+//using phaser 2.6.2
 var game = {},
-    map, background, foreground, middleground, blocked, character, dragon1, dragonsNextLocation, dragonsLocationX = 1724,
-    dragonsLocationY = 224,
-    flag, canKick,
-    ballDuration = 2550,
-    speed = 250,
-    ballDistance = 800,
-    maxWindUp = 2000,
-    keyK, keyP, keyB, keyN, keyM, keyUp, keyRight, keyDown, keyLeft, keyEsc, escAim, cavehole, golfball, dottedline,
-    kickPercentage, treeLocations,
-    golfballCollision = true,
-    chipKickUi, chipKickUi2, stanceUi, puttKickUi, mask, strokeUiText, blurX, blurY, blurOn = false,
-    fillPercent = 0,
-    fillColor = { r: 255, g: 0, b: 0 },
-    sillhouetteColor = { r: 0, g: 0, b: 0 },
-    currentSpriteUi, youWin = false,
-    stroke = 0,
-    par = 4,
-    cameraFollow = false
+    map,
 
+    // layers
+    foreground,//tiles that sprites can move under
+    middleground,//scenery that isn't part of the background, e.g. tree stumps, rocks
+    blocked,//sprites cannot move over
+    background,//background is made up of cellular automata https://bitstorm.org/gameoflife/
+
+
+    dragonsLocationX = 1724, dragonsLocationY = 224,//the dragon's starting location
+    canKick,//boolean that determins if the player can kick, is set to true when isTouching is called
+    ballDuration = 2550,//The duration of the movement, in ms.
+    speed = 550,//character run speed
+    ballDistance = 800, //The distance, in pixels, the Body will move, by default 800, changed by the "b,n,m" keys.
+    maxWindUp = 2000,//max time allowed for kick wind up, currently 2 seconds
+    keyK, keyP, keyB, keyN, keyM, keyUp, keyRight, keyDown, keyLeft, keyEsc, escAim, //keys
+    cavehole, golfball, dottedline, flag, character, dragon1,//sprites
+    kickPercentage,//is determined by how long the "kick" key is held down divided by the maxWindUp "time" of the move selected
+    treeLocations,//array of tree locations pulled from tilesheet(currently 92), is where the dragon moves to
+    golfballCollision = true,//switch that is turned to false when chipping the ball over blocked tiles
+    chipKickUi, chipKickUi2, stanceUi, puttKickUi, currentSpriteUi, mask, strokeUiText,
+    blurX, blurY, blurOn = false, //blur is for character penalty/injury
+    fillPercent = 0,// used for powerUp meter
+    fillColor = { r: 255, g: 0, b: 0 }, //used for powerUp meter
+    sillhouetteColor = { r: 0, g: 0, b: 0 },
+    youWin = false,//will trigger a message when turned to true, on ball overlap with hole
+    stroke = 0,//incremented when the character touches the dragon, and when the character hits the ball
+    par = 4,//increase or decrease to change difficulty
+    cameraFollow = false//camera follow refers to the following the charcter, it is set to false by default to allow for camera move to hole
+
+//camera shake on maxWindUp
 function shake() {
     fillPercent = 100
     setFillPercent(100, currentSpriteUi)
     game.camera.shake(0.0025, 100)
 }
 
+//called when character and golfball overlap, stops the golfball velocity
 function isTouching() {
-    golfball.body.stopVelocityOnCollide = false
+    golfball.body.stopVelocityOnCollide = false//prevents character and golfball reattachment on short kicks
     if (golfball.body.velocity.x === 0 && golfball.body.velocity.y === 0 && escAim === false) {
         canKick = true
         setForTeeing(character)
     }
 }
-
+//called when ball and hole overlap, destroys the golfball and displays the message with the stroke value
 function ballInHole() {
     var text = {},
         style = {},
@@ -80,6 +93,7 @@ function ballInHole() {
     game.time.events.add(Phaser.Timer.SECOND * 3, function() { text.destroy() }, this)
 }
 
+//called in kick() and/or monsterPenalty
 function strokeCounter() {
     if (youWin === false) {
         stroke++
@@ -87,6 +101,7 @@ function strokeCounter() {
     }
 }
 
+//called in isTouching, snaps the character sprite to the golfball sprite, with an appropriate offset
 function setForTeeing(char) {
     char.body.velocity.x = 0
     char.body.velocity.y = 0
@@ -102,9 +117,9 @@ function setForTeeing(char) {
     }
 }
 
+//called when "esc" is pressed, which then offsets the character 15px from the ball, to allow character to move freely
 function escapeAiming() {
     escAim = true
-
     if (canKick === true) {
         if (character.animations.frame === 27) {
             character.x -= 15
@@ -114,6 +129,7 @@ function escapeAiming() {
     }
 }
 
+//calclates the kick distance, and sets the location for each kick UI that is selected
 function kick(key) {
     var calculatedDistance
 
@@ -128,18 +144,19 @@ function kick(key) {
 
         golfball.body.moveTo(ballDuration, calculatedDistance, dottedline.angle)
         strokeCounter()
-        console.log(stroke)
+
         if (calculatedDistance > 800) {
             chipKick(calculatedDistance)
         }
 
-        currentSpriteUi.maskedSprite.position.setTo(game.camera.width - 75, game.camera.height - 100)
-        currentSpriteUi.maskedSprite.fixedToCamera = true
+        //currentSpriteUi.maskedSprite.position.setTo(game.camera.width - 75, game.camera.height - 100) //delete if not found to be helpful
+        //currentSpriteUi.maskedSprite.fixedToCamera = true //delete if not found to be helpful
         fillPercent = 0
         setFillPercent(0, currentSpriteUi)
     }
 }
 
+//called from kick, turns golfball collision off, and brings golfball to the top layer
 function chipKick(ballDuration) {
     golfballCollision = false
     game.world.bringToTop(golfball)
@@ -149,6 +166,7 @@ function chipKick(ballDuration) {
     chipTween.start()
 }
 
+//is called onComplete of the chipTween animation, it restores golfball default collisioin and layer
 function chipEnd() {
     golfballCollision = true
     game.world.sendToBack(golfball)
@@ -159,6 +177,7 @@ function chipEnd() {
     chipTween.start()
 }
 
+//called on detectKick(), sets all other kick UIs to invisible
 function toggleCurrentUi(sprite) {
     chipKickUi.maskedSprite.visible = false
     chipKickUi2.maskedSprite.visible = false
@@ -168,6 +187,7 @@ function toggleCurrentUi(sprite) {
     currentSpriteUi.maskedSprite.visible = true
 }
 
+//called on specific key events, determines parameters for the golfball moveTo animation and toggles the kick UI
 function detectKick(key) {
     switch (key.event.code) {
         case 'KeyB':
@@ -191,10 +211,10 @@ function detectKick(key) {
     }
 }
 
+//reads in each png, and converts the pixel to bit map data which is then used to make a sprite
 function createUiMaskSprite(srcKey, w, h) {
     var bmd, fillBMD, maskedBMD, maskedSprite
     var obj = {}
-
     // make the bitmapdata sillouette from preloaded png file
     bmd = game.make.bitmapData()
     bmd.load(srcKey)
@@ -213,6 +233,7 @@ function createUiMaskSprite(srcKey, w, h) {
     return obj
 }
 
+//called whenever we need to change the level of the powerUp meter
 function setFillPercent(percent, obj) {
     // maskedBMD
     var w = obj.maskedBMD.width
@@ -226,14 +247,15 @@ function setFillPercent(percent, obj) {
     obj.maskedBMD.alphaMask(obj.fillBMD, obj.sillhouetteBMD, srcRect)
 }
 
+// processPixelRGB won't take an argument, so we've set our sillhouetteColor globally
 function forEachPixel(pixel) {
-    // processPixelRGB won't take an argument, so we've set our sillhouetteColor globally
     pixel.r = sillhouetteColor.r
     pixel.g = sillhouetteColor.g
     pixel.b = sillhouetteColor.b
     return pixel
 }
 
+//called in create, tied to a time event currently set at 1.5 seconds, opening camera move to show the user where the randomly generated hole is
 function cameraTweenToHole() {
     var sec = 6
     var holeDistance = game.physics.arcade.distanceBetween(golfball, cavehole)
@@ -241,6 +263,7 @@ function cameraTweenToHole() {
     game.time.events.add(Phaser.Timer.SECOND * sec, function() { cameraFollow = true }, this)
 }
 
+//test function
 function test(e) {
     console.log(getTileLocations(92, 'Foreground'))
 }
@@ -295,20 +318,21 @@ function directionFromAngle(angleDeg) {
     }
 }
 
+//called in create, animates the dragon sprite from random tree to random tree
 function dragonCreep() {
-    var treeRandomIndex = game.rnd.integerInRange(0, treeLocations.length - 1)
+    var treeRandomIndex = game.rnd.integerInRange(0, treeLocations.length - 1)//pulls a random index from the treeLocations array
     var i = treeRandomIndex
-    var tree = treeLocations[i]
+    var tree = treeLocations[treeRandomIndex]
     var angleDeg = angleBetweenPoints(tree, dragon1)
 
     dragon1.animations.play(directionFromAngle(angleDeg), true)
 
     var randomDuration = game.rnd.integerInRange(1000, 5000)
-    var move1 = makeSpriteTween(dragon1, randomDuration, treeLocations[i].x + _.random(0, 100), treeLocations[i].y + _.random(0, 100))
+    var move1 = makeSpriteTween(dragon1, randomDuration, treeLocations[treeRandomIndex].x + _.random(0, 100), treeLocations[treeRandomIndex].y + _.random(0, 100))
     move1.onComplete.add(function() { dragon1.animations.stop() }, this)
     move1.start()
 }
-
+//manually entered animation path for dragon1 sprite
 function dragonPatrol() {
     var randomDuration = game.rnd.integerInRange(1000, 5000)
     var move1 = makeSpriteTween(dragon1, randomDuration, 50, 40)
@@ -336,6 +360,7 @@ function makeSpriteTween(spriteName, spriteSpeed, spriteX, spriteY) {
     return sweetTween
 }
 
+//called when the dragon and the character overlap, causes blur and shake and flash, incremnts stroke counter
 function monsterPenalty() {
     if (!character.hasOverlapped && !dragon1.hasOverlapped) {
         dragon1.hasOverlapped = character.hasOverlapped = true
@@ -361,11 +386,12 @@ function monsterPenalty() {
 }
 
 game.create = function() {
+    //turns on the physics system
     game.physics.startSystem(Phaser.Physics.ARCADE)
 
     // add the map and set bounds. Turn on arcade physics so we can collide with boundaries
     map = game.add.tilemap('map')
-    game.world.setBounds(0, 0, 3200, 3200)
+    game.world.setBounds(0, 0, 3200, 3200) //sets world bounds in pixels
 
     // the first parameter is the name given in Tiled, second is the cache name given in preloader.js
     map.addTilesetImage('grass-tiles', 'grass')
@@ -374,8 +400,9 @@ game.create = function() {
     map.addTilesetImage('terrain_atlas', 'terrain_atlas')
     treeLocations = getTileLocations(92, 'Foreground')
 
-    // need to refer to these layers by the layer name in Tiled
+    // need to refer to these layers by the layer name in Tiled and map.json
     // add the character before the Foreground layer to make it look like he's walking behind
+    //specific order below, don't change it
     background = map.createLayer('Background')
     blocked = map.createLayer('Blocked')
     blocked.visible = false
@@ -390,7 +417,7 @@ game.create = function() {
     dottedline = game.add.sprite(golfball.x + 40, golfball.y, 'dottedline')
     foreground = map.createLayer('Foreground')
 
-    character.anchor.setTo(0.5, 0.5)
+    character.anchor.setTo(0.5, 0.5)//anchors the character when he is setForTeeing
     golfball.anchor.setTo(0.5, 0.5)
     dottedline.anchor.setTo(0, 0.5)
 
@@ -421,8 +448,8 @@ game.create = function() {
     currentSpriteUi = stanceUi
     currentSpriteUi.maskedSprite.visible = true
 
-    map.setCollisionBetween(1, 1000, true, 'Blocked')
-    map.setCollisionBetween(73, 127, true, 'Foreground')
+    map.setCollision(137, true, 'Blocked')//137 is the value of the red.png tile which can be found in map.json
+    //map.setCollisionBetween(73, 127, true, 'Foreground') //delete if not found to be helpful
 
     // enable the physics engine only for sprites that need them
     game.physics.arcade.enable(character, true)
@@ -471,20 +498,23 @@ game.create = function() {
     strokeUiText.anchor.set(0.5)
     strokeUiText.inputEnabled = true
 
-    game.time.events.loop(Phaser.Timer.SECOND * 12, dragonCreep, this)
+    game.time.events.loop(Phaser.Timer.SECOND * 12, dragonCreep, this)//timer that controls dragonCreep's firing
 
 }
 
 game.update = function() {
+  // Check key states every frame.
+  // Sprites need a velocity to work with physics
+
+
+
     canKick = false
     dottedline.visible = false
     dottedline.x = golfball.x
     dottedline.y = golfball.y
 
-    // dragonMove()
-
     game.physics.arcade.collide(character, blocked)
-    game.physics.arcade.collide(golfball, dragon1, function() { dragon1.destroy() })
+    game.physics.arcade.collide(golfball, dragon1, function() { dragon1.destroy() })//on collide the dragon is destoyed
     game.physics.arcade.overlap(character, dragon1, monsterPenalty)
 
     if (golfballCollision === true) {
@@ -493,9 +523,6 @@ game.update = function() {
     }
     game.physics.arcade.overlap(character, golfball, isTouching)
 
-    // game.camera.y = cavehole.y - game.camera.height/2
-    // game.camera.x = cavehole.x - game.camera.width/2
-    // lock the camera on our sprite guy and follow
     if (cameraFollow === true) {
         this.camera.follow(character, Phaser.Camera.FOLLOW_LOCKON)
     }
@@ -503,18 +530,18 @@ game.update = function() {
     character.body.velocity.x = 0
     character.body.velocity.y = 0
 
-    if (game.input.keyboard.isDown(Phaser.Keyboard.K)) {
-        if (canKick === true) {
-            if (fillPercent < 100) {
-                setFillPercent(fillPercent, currentSpriteUi)
-                fillPercent = (fillPercent + 0.83) % 101
-            } else if (fillPercent >= 100) {
+    if (game.input.keyboard.isDown(Phaser.Keyboard.K)) { //if keyK is being held down, code block will loop
+        if (canKick === true) {//if overlapping with ball
+            if (fillPercent < 100) {// if it isn't fully poweredUp
+                setFillPercent(fillPercent, currentSpriteUi)//sets the height of the UI sprite
+                fillPercent = (fillPercent + 0.83) % 101 //calculation that syncs with the game's frame rate
+            } else if (fillPercent >= 100) {//if it is full, then it shakes
                 shake()
             }
         }
     }
-    // Check key states every frame.
-    // Sprites need a velocity to work with physics
+
+//dottedline angles for hitting the ball, or if the character isn't overlapping the ball, it moves the character
     if (game.input.keyboard.isDown(Phaser.Keyboard.LEFT)) {
         if (canKick === true) {
             dottedline.visible = true
@@ -550,7 +577,7 @@ game.update = function() {
             character.body.velocity.y -= speed
         }
     } else {
-        character.animations.stop()
+        character.animations.stop()//stops the character if no input is being given
     }
 }
 
