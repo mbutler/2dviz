@@ -22,7 +22,7 @@ var game = {},
     kickPercentage,//is determined by how long the "kick" key is held down divided by the maxWindUp "time" of the move selected
     treeLocations,//array of tree locations pulled from tilesheet(currently 92), is where the dragon moves to
     golfballCollision = true,//switch that is turned to false when chipping the ball over blocked tiles
-    chipKickUi, chipKickUi2, stanceUi, puttKickUi, currentSpriteUi, mask, strokeUiText, playAgainText,
+    chipKickUi, chipKickUi2, stanceUi, puttKickUi, currentSpriteUi, mask, strokeUiText,
     blurX, blurY, blurOn = false, //blur is for character penalty/injury
     fillPercent = 0,// used for powerUp meter
     fillColor = { r: 255, g: 0, b: 0 }, //used for powerUp meter
@@ -92,16 +92,16 @@ function ballInHole() {
 
     game.time.events.add(Phaser.Timer.SECOND * 3, function() { text.destroy() }, this)
 
-    //New Level Loading option
-    playAgainText = game.add.text(camX - 200, camY + 100, 'Next Level?', style)
+    //attempt to add a replay or advance option
+    //var text2 = '<a href="">Want to Play again?</a>'
+    //game.add.text(camX - 200, camY + 100, text2, style)
 
-    playAgainText.inputEnabled = true
-    playAgainText.events.onInputDown.add(clickOnText, this)
+    game.state.start('game1')
+
+
+
 }
-//
-function clickOnText(){
-    game.state.start('level2')
-}
+
 //called in kick() and/or monsterPenalty
 function strokeCounter() {
     if (youWin === false) {
@@ -399,7 +399,7 @@ game.create = function() {
     game.physics.startSystem(Phaser.Physics.ARCADE)
 
     // add the map and set bounds. Turn on arcade physics so we can collide with boundaries
-    map = game.add.tilemap('map')
+    map = game.add.tilemap('level2')
     game.world.setBounds(0, 0, 3200, 3200) //sets world bounds in pixels
 
     // the first parameter is the name given in Tiled, second is the cache name given in preloader.js
@@ -423,7 +423,7 @@ game.create = function() {
     flag.anchor.setTo(0, 1)
     character = game.add.sprite(450, 100, 'characters')
     dragon1 = game.add.sprite(1291, 224, 'dragon1')
-    skeletonidle = game.add.sprite(530, 500, 'skeletonidle')//testing
+    //skeletonidle = game.add.sprite(530, 500, 'skeletonidle')//testing
     dottedline = game.add.sprite(golfball.x + 40, golfball.y, 'dottedline')
     foreground = map.createLayer('Foreground')
 
@@ -478,8 +478,8 @@ game.create = function() {
     dragon1.animations.add('down', [0, 1, 2, 3], 20, true)
     dragon1.animations.add('up', [12, 13, 14, 15], 20, true)
 
-    skeletonidle.animations.add('idle', [0, 2, 3, 4, 5, 6, 7, 8, 9, 10], 20, true)
-    skeletonidle.animations.play('idle', true)
+    //skeletonidle.animations.add('idle', [0, 2, 3, 4, 5, 6, 7, 8, 9, 10], 20, true)
+    //skeletonidle.animations.play('idle', true)
 
     golfball.body.collideWorldBounds = true
     golfball.body.bounce.set(0.25)
